@@ -9,3 +9,5 @@ MechOverflow
 =================
 
 После клонирования репозитория нужно ввести команду `pip3 install -r requirements.txt`
+
+Для проекта была создана ориентировочная [UX-диаграмма](https://drive.google.com/file/d/1hYnB5wskY51-PfqBG5Vlra78nPZiUOYG/view?usp=sharing)

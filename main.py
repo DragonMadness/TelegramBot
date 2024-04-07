@@ -1,7 +1,13 @@
 import telebot
 from telebot import types
 
+import messages
+from logger import Logger
+from log_level import *
+
 bot = telebot.TeleBot(open("./token.txt").read())
+logger = Logger(print)
+logger.log(INFO, "Logger created.")
 
 
 @bot.message_handler(commands=["start"])
@@ -12,15 +18,8 @@ def start(message):
         types.KeyboardButton("Мои вопросы"),
         types.KeyboardButton("Поиск"))
 
-    bot.send_message(message.from_user.id, "Привет, это MechOverflow! 👋\n"
-                                           "Через меня ты можешь задать вопрос другим пользователям "
-                                           "или ответить на чужой вопрос. Я позволяю машиностроителям "
-                                           "помогать друг другу и делиться знаниями. 📚\n"
-                                           "\n"
-                                           "Ты можешь использовать кнопки ниже,\n"
-                                           "чтобы воспользоваься моими возможностями. 🔘\n"
-                                           ""
-                                           "Приятного пользования!\n", reply_markup=markup)
+    bot.send_message(message.from_user.id, messages.greeting, reply_markup=markup)
 
 
-bot.polling(none_stop=True, interval=0)
+logger.log(INFO, "Bot started!")
+bot.polling(non_stop=True, interval=0)

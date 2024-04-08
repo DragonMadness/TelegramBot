@@ -3,6 +3,9 @@ class Response:
         self.__response = response
         self.__rating = rating
 
+    def get_rating(self):
+        return self.__rating
+
     def add_rating(self):
         self.__rating += 1
 

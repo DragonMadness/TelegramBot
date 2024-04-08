@@ -8,6 +8,11 @@ from log_level import *
 from question import Question
 
 bot = telebot.TeleBot(open("./token.txt").read())
+bot.set_my_commands(commands=[
+    BotCommand("/start", "Описание бота"),
+    BotCommand("/question", "Создаёт новый вопрос")
+])
+
 logger = Logger(print)
 logger.log(INFO, "Logger created.")
 

@@ -1,4 +1,4 @@
-import response
+from src.model import response
 
 
 def parse(raw: dict):

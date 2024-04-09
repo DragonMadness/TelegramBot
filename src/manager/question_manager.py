@@ -1,9 +1,9 @@
 import json
 from pathlib import *
 
-import question
-from question import Question
-from question_encoder import QuestionEncoder
+from src.model import question
+from src.model.question import Question
+from src.storage.question_encoder import QuestionEncoder
 
 
 def ensure_file_exists(path: Path):

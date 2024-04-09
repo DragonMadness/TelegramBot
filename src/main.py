@@ -2,16 +2,20 @@ import telebot
 from telebot.types import *
 from requests.exceptions import ConnectTimeout
 
-import messages
-from logger import Logger
-from log_level import *
+from src.util import messages
+from src.logging.logger import Logger
+from src.logging.log_level import *
 
-from question_manager import QuestionManager
+from src.manager.question_manager import QuestionManager
+
+RESOURCES_PATH = Path.cwd().absolute() / "resources"
+STORAGE_PATH = RESOURCES_PATH / "storage" / "questions.json"
+TOKEN_PATH = RESOURCES_PATH / "token.txt"
 
 logger = Logger(print)
 logger.log(INFO, "Logger created.")
 
-bot = telebot.TeleBot(open("./token.txt").read())
+bot = telebot.TeleBot(open(TOKEN_PATH).read())
 while True:
     try:
         bot.delete_my_commands()
@@ -26,7 +30,6 @@ while True:
     except ConnectTimeout:
         logger.log(WARN, "Timed out while connecting to Telegram API. Retrying")
 
-STORAGE_PATH = Path.cwd().absolute() / "storage" / "questions.json"
 new_questions_from = []
 question_manager = QuestionManager()
 question_manager.read(STORAGE_PATH)

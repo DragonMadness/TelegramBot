@@ -1,4 +1,4 @@
-from log_level import LogLevel
+from src.logging.log_level import LogLevel
 
 
 class Logger:

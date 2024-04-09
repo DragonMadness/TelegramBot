@@ -1,3 +1,8 @@
+def parse(raw: dict):
+    return Response(raw["text"],
+                    raw["rating"])
+
+
 class Response:
     def __init__(self, response: str, rating: int = 0):
         self.__response = response
@@ -11,3 +16,6 @@ class Response:
 
     def deduct_rating(self):
         self.__rating -= 1
+
+    def serialize(self):
+        return {"text": self.__response, "rating": self.__rating}

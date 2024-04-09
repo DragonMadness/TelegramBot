@@ -12,4 +12,4 @@ MechOverflow
 
 Для проекта была создана ориентировочная [UX-диаграмма](https://drive.google.com/file/d/1hYnB5wskY51-PfqBG5Vlra78nPZiUOYG/view?usp=sharing)
 
-Также существует [kanban-доска](https://trello.com/invite/b/UOCy70Bb/ATTIc70077174198d38c3148e82975b8d25c41CB114C/mechoveflow) задач проекта.
+Также существует [kanban-доска](https://app.asana.com/0/1207025421193560/1207025350975393) задач проекта.

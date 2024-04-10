@@ -40,7 +40,7 @@ def start(message: Message):
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
     markup.add("/question", "/my-questions", "/search")
 
-    bot.send_message(message.from_user.id, messages.greeting, reply_markup=markup)
+    bot.send_message(message.from_user.id, messages.greeting, parse_mode="Markdown", reply_markup=markup)
 
 
 @bot.message_handler(commands=["question"])
@@ -50,7 +50,7 @@ def new_question_request(message: Message):
     if userid not in new_questions_from:
         new_questions_from.append(message.from_user.id)
 
-    bot.send_message(message.from_user.id, messages.request_question)
+    bot.send_message(message.from_user.id, messages.request_question, parse_mode="Markdown")
 
 
 @bot.message_handler(commands=["myquestions"])
@@ -59,20 +59,20 @@ def get_user_questions(message: Message):
 
     user_questions = [question.get_formatted() for question in question_manager.get_questions_for_user(userid)]
     if len(user_questions) == 0:
-        bot.send_message(userid, messages.no_questions_asked)
+        bot.send_message(userid, messages.no_questions_asked, parse_mode="Markdown")
         return
-    bot.send_message(userid, "\n\n".join(user_questions))
+    bot.send_message(userid, "\n\n".join(user_questions), parse_mode="Markdown")
 
 
-# @bot.message_handler(commands=["allquestions"])
-# def get_user_questions(message: Message):
-#     userid = message.from_user.id
-#
-#     user_questions = [question.get_formatted() for question in question_manager.get_questions()]
-#     if len(user_questions) == 0:
-#         bot.send_message(userid, messages.no_questions_asked)
-#         return
-#     bot.send_message(userid, "\n\n".join(user_questions))
+@bot.message_handler(commands=["allquestions"])
+def get_user_questions(message: Message):
+    userid = message.from_user.id
+
+    user_questions = [question.get_formatted() for question in question_manager.get_questions()]
+    if len(user_questions) == 0:
+        bot.send_message(userid, messages.no_questions_asked, parse_mode="Markdown")
+        return
+    bot.send_message(userid, "\n\n".join(user_questions), parse_mode="Markdown")
 
 
 @bot.message_handler(commands=["stop"])
@@ -81,8 +81,13 @@ def stop(message: Message):
 
     question_manager.save(STORAGE_PATH)
 
-    bot.send_message(userid, messages.shutdown)
+    bot.send_message(userid, messages.shutdown, parse_mode="Markdown")
     bot.stop_polling()
+
+
+@bot.message_handler(commands=["help"])
+def show_help(message: Message):
+    bot.send_message(message.from_user.id, messages.help_message, parse_mode="Markdown")
 
 
 @bot.message_handler(content_types=["text"])
@@ -97,7 +102,7 @@ def new_question_creation(message: Message):
 
     if userid in new_questions_from:
         question_manager.new_question(userid, username, text)
-        bot.send_message(userid, messages.question_saved)
+        bot.send_message(userid, messages.question_saved, parse_mode="Markdown")
         logger.log(INFO, f"Successfully registered a question from {username}")
 
 

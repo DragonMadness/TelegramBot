@@ -8,10 +8,11 @@ from src.storage.question_encoder import QuestionEncoder
 
 def ensure_file_exists(path: Path):
     path.parent.mkdir(parents=True, exist_ok=True)
+    path.touch()
 
     raw = open(path, mode="r+")
     if len(raw.read()) == 0:
-        raw.write("{}")
+        raw.write("[]")
 
 
 class QuestionManager:
@@ -38,5 +39,7 @@ class QuestionManager:
         ensure_file_exists(path)
 
         raw = open(path, mode="r").read()
-        self.__questions = json.loads(raw, object_hook=question.parse)
+        loaded = json.loads(raw)
+        if len(loaded) > 0:
+            self.__questions = [question.parse(raw_question) for raw_question in loaded]
 

@@ -8,8 +8,6 @@ from src.storage.question_encoder import QuestionEncoder
 
 def ensure_file_exists(path: Path):
     path.parent.mkdir(parents=True, exist_ok=True)
-    if not path.exists():
-        return
 
     raw = open(path, mode="r+")
     if len(raw.read()) == 0:

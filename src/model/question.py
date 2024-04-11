@@ -1,4 +1,7 @@
+from abc import ABC
+
 from src.model import response
+from src.util.formattable import Formattable
 
 
 def parse(raw: dict):
@@ -8,7 +11,7 @@ def parse(raw: dict):
                     [response.parse(raw_response) for raw_response in raw["responses"]])
 
 
-class Question:
+class Question(Formattable):
     def __init__(self, poster_id: int, poster_name: str, question_text: str, responses: list[response.Response] = ()):
         self.__poster_id = poster_id
         self.__poster_name = poster_name
@@ -27,7 +30,7 @@ class Question:
     def get_responses(self):
         return self.__responses
 
-    def get_formatted(self):
+    def get_string(self):
         output = (f"Вопрос пользователя @{self.__poster_name}.\n\n"
                   f"{self.__question_text}\n\n")
         if len(self.__responses) > 0:

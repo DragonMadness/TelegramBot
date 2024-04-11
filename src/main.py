@@ -1,9 +1,11 @@
+from typing import Callable
+
 import telebot
 from telebot.types import *
 from requests.exceptions import ConnectTimeout
 
 from src.util import messages
-from src.util import paged_message
+from src.util.paged_message_manager import PagedMessageManager
 from src.logging.logger import Logger
 from src.logging.log_level import *
 
@@ -31,9 +33,10 @@ while True:
     except ConnectTimeout:
         logger.log(WARN, "Timed out while connecting to Telegram API. Retrying")
 
-new_questions_from = []
+waiting_reply: dict[int: Callable] = {}
 question_manager = QuestionManager()
 question_manager.read(STORAGE_PATH)
+paged_message_manager = PagedMessageManager()
 
 
 @bot.message_handler(commands=["start"])
@@ -45,8 +48,8 @@ def start(message: Message):
 def new_question_request(message: Message):
     userid = message.from_user.id
 
-    if userid not in new_questions_from:
-        new_questions_from.append(message.from_user.id)
+    if userid not in waiting_reply.keys():
+        waiting_reply[userid] = create_question
 
     bot.send_message(message.from_user.id, messages.request_question, parse_mode="Markdown")
 
@@ -55,25 +58,32 @@ def new_question_request(message: Message):
 def get_user_questions(message: Message):
     userid = message.from_user.id
 
-    user_questions = [question.get_formatted() for question in question_manager.get_questions_for_user(userid)]
+    user_questions = question_manager.get_questions_for_user(userid)
     if len(user_questions) == 0:
         bot.send_message(userid, messages.no_questions_asked, parse_mode="Markdown")
         return
 
-    message_text, markup = paged_message.get_message(user_questions, 0)
+    message_text, markup = paged_message_manager.get_message(userid, user_questions)
+    if message_text is None or markup is None:
+        return
+    markup.row(InlineKeyboardButton("Добавить ответ", callback_data="RA"))
     bot.send_message(userid, message_text, parse_mode="Markdown", reply_markup=markup)
 
 
 @bot.message_handler(commands=["allquestions"])
-def get_user_questions(message: Message):
+def get_all_questions(message: Message):
     userid = message.from_user.id
 
-    questions = [question.get_formatted() for question in question_manager.get_questions()]
+    questions = question_manager.get_questions()
     if len(questions) == 0:
         bot.send_message(userid, messages.no_questions_asked, parse_mode="Markdown")
         return
 
-    message_text, markup = paged_message.get_message(questions, 0)
+    message_text, markup = paged_message_manager.get_message(userid, questions)
+    if message_text is None or markup is None:
+        return
+    markup: InlineKeyboardMarkup
+    markup.row(InlineKeyboardButton("Добавить ответ", callback_data="RA"))
     bot.send_message(userid, message_text, parse_mode="Markdown", reply_markup=markup)
 
 
@@ -93,31 +103,56 @@ def show_help(message: Message):
 
 
 @bot.message_handler(content_types=["text"])
-def new_question_creation(message: Message):
+def on_text(message: Message):
     text = message.text
     userid = message.from_user.id
-    username = message.from_user.username
     if "/" in text:
-        if userid in new_questions_from:
-            new_questions_from.remove(userid)
+        if userid in waiting_reply.keys():
+            waiting_reply.pop(userid)
         return
 
-    if userid in new_questions_from:
-        question_manager.new_question(userid, username, text)
-        bot.send_message(userid, messages.question_saved, parse_mode="Markdown")
-        logger.log(INFO, f"Successfully registered a question from {username}")
+    if userid in waiting_reply.keys():
+        waiting_reply.pop(userid)(message)
 
 
 @bot.callback_query_handler(lambda x: x)
 def handle_callback(callback: CallbackQuery):
-    entries, page = paged_message.handle_callback(callback.data)
+    userid = callback.from_user.id
+    action = callback.data.split(";")[0]
     message = callback.message
-    new_message_text, markup = paged_message.get_message(entries, page)
+    if action[0] == "P":
+        paged_message_manager.handle_callback(callback.data)
+        new_message_text, new_markup = paged_message_manager.get_message(userid)
+        if new_message_text is None or new_markup is None:
+            return
+        new_markup: InlineKeyboardMarkup
 
-    bot.edit_message_text(chat_id=message.chat.id, message_id=message.id, text=new_message_text, reply_markup=markup)
+        keyboard = message.reply_markup.keyboard.copy()
+        keyboard[0] = new_markup.keyboard[0]
+
+        bot.edit_message_text(chat_id=message.chat.id, message_id=message.id, text=new_message_text,
+                              reply_markup=InlineKeyboardMarkup(keyboard=keyboard))
+    elif action == "RA":
+        if userid not in paged_message_manager.object_lists_cache.keys():
+            return
+        waiting_reply[userid] = add_answer
+        bot.send_message(userid, messages.request_reply)
+
+
+def create_question(message: Message):
+    userid = message.from_user.id
+    username = message.from_user.username
+
+    question_manager.new_question(userid, username, message.text)
+    bot.send_message(userid, messages.question_saved, parse_mode="Markdown")
+    logger.log(INFO, f"Successfully registered a question from {username}")
+
+
+def add_answer(message: Message):
+    question_manager.get_questions()
 
 
 logger.log(INFO, "Bot started!")
 bot.polling(non_stop=True, interval=0)
-paged_message.destroy()
+paged_message_manager.destroy()
 logger.log(INFO, "Bot shut down.")

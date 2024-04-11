@@ -10,6 +10,7 @@ from src.logging.logger import Logger
 from src.logging.log_level import *
 
 from src.manager.question_manager import QuestionManager
+from src.model.question import Question
 
 RESOURCES_PATH = Path.cwd().absolute() / "resources"
 STORAGE_PATH = RESOURCES_PATH / "storage" / "questions.json"
@@ -149,10 +150,20 @@ def create_question(message: Message):
 
 
 def add_answer(message: Message):
-    question_manager.get_questions()
+    userid = message.from_user.id
+    if userid not in paged_message_manager.object_lists_cache.keys():
+        return
+
+    user_pages_data = paged_message_manager.object_lists_cache[userid]
+
+    current_question: Question = user_pages_data[0][user_pages_data[1]]
+    current_question.add_response(userid, message.text)
+
+    bot.send_message(userid, messages.reply_saved)
 
 
 logger.log(INFO, "Bot started!")
 bot.polling(non_stop=True, interval=0)
 paged_message_manager.destroy()
+question_manager.save(STORAGE_PATH)
 logger.log(INFO, "Bot shut down.")

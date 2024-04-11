@@ -1,5 +1,3 @@
-from abc import ABC
-
 from src.model import response
 from src.util.formattable import Formattable
 
@@ -12,7 +10,10 @@ def parse(raw: dict):
 
 
 class Question(Formattable):
-    def __init__(self, poster_id: int, poster_name: str, question_text: str, responses: list[response.Response] = ()):
+    def __init__(self, poster_id: int, poster_name: str, question_text: str, responses: list[response.Response] = None):
+        if responses is None:
+            responses = []
+
         self.__poster_id = poster_id
         self.__poster_name = poster_name
         self.__question_text = question_text
@@ -30,12 +31,15 @@ class Question(Formattable):
     def get_responses(self):
         return self.__responses
 
+    def add_response(self, author: int, text: str):
+        self.__responses.append(response.Response(author, text))
+
     def get_string(self):
         output = (f"Вопрос пользователя @{self.__poster_name}.\n\n"
                   f"{self.__question_text}\n\n")
         if len(self.__responses) > 0:
-            output += ("Лучший ответ:"
-                       f"{sorted(self.__responses, key=lambda x: x.get_rating())}")
+            output += ("Лучший ответ:\n"
+                       f"{sorted(self.__responses, key=lambda x: x.get_rating())[0].get_string()}")
         else:
             output += "Пока нет ответов..."
         return output

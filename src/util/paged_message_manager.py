@@ -46,15 +46,15 @@ class PagedMessageManager:
         buttons = [[]]
         user_pages_data = self.object_lists_cache[userid]
         current = user_pages_data[1]
+        if len(user_pages_data[0]) == 0:
+            buttons[0].append(InlineKeyboardButton("Больше страниц нет...",
+                                                   callback_data=create_callback_data("I", userid)))
         if current > 0:
             buttons[0].append(InlineKeyboardButton("Предыдущая страница",
                                                    callback_data=create_callback_data("PP", userid)))
-        elif current < len(user_pages_data[0]) - 1:
+        if current < len(user_pages_data[0]) - 1:
             buttons[0].append(InlineKeyboardButton("Следующая страница",
                                                    callback_data=create_callback_data("PN", userid)))
-        else:
-            buttons[0].append(InlineKeyboardButton("Больше страниц нет...",
-                                                   callback_data=create_callback_data("I", userid)))
         return user_pages_data[0][current].get_string(), InlineKeyboardMarkup(buttons)
 
     def handle_callback(self, callback_data: str):

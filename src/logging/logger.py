@@ -1,4 +1,4 @@
-from src.logging.log_level import LogLevel
+from src.logging.log_level import *
 
 
 class Logger:
@@ -9,4 +9,5 @@ class Logger:
     def log(self, level: LogLevel, message: str):
         self.__output(level + message)
 
-
+    def info(self, message: str):
+        self.log(INFO, message)

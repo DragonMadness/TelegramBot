@@ -1,8 +1,7 @@
 import json
 from pathlib import *
 
-from src.model import question
-from src.model.question import Question
+from src.model.question import *
 from src.storage.question_encoder import QuestionEncoder
 
 
@@ -33,13 +32,14 @@ class QuestionManager:
     def save(self, path: Path):
         ensure_file_exists(path)
 
-        open(path, mode="w+").write(json.dumps(self.__questions, cls=QuestionEncoder))
+        with open(path, mode="w+") as file:
+            file.write(json.dumps(self.__questions, cls=QuestionEncoder))
 
     def read(self, path: Path):
         ensure_file_exists(path)
 
-        raw = open(path, mode="r").read()
-        loaded = json.loads(raw)
-        if len(loaded) > 0:
-            self.__questions = [question.parse(raw_question) for raw_question in loaded]
-
+        with open(path, mode="r") as file:
+            raw = file.read()
+            loaded = json.loads(raw)
+            if len(loaded) > 0:
+                self.__questions = [parse(raw_question) for raw_question in loaded]

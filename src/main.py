@@ -29,7 +29,7 @@ while True:
             BotCommand("/question", "Создаёт новый вопрос"),
             BotCommand("/myquestions", "Список заданных вами вопросов."),
             BotCommand("/allquestions", "Список заданных вопросов."),
-            BotCommand("/stop", "Останавливает бота, сохраняя данные локально.")
+            BotCommand("/help", "Выводит подсказку по командам.")
         ])
         break
     except ConnectTimeout:
@@ -110,7 +110,7 @@ def show_help(message: Message):
 def on_text(message: Message):
     text = message.text
     userid = message.from_user.id
-    if "/" in text:
+    if "/" in text[0]:
         if userid in waiting_reply.keys():
             waiting_reply.pop(userid)
         return

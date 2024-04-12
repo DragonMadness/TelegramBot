@@ -46,7 +46,7 @@ class PagedMessageManager:
         buttons = [[]]
         user_pages_data = self.object_lists_cache[userid]
         current = user_pages_data[1]
-        if len(user_pages_data[0]) == 0:
+        if len(user_pages_data[0]) == 1:
             buttons[0].append(InlineKeyboardButton("Больше страниц нет...",
                                                    callback_data=create_callback_data("I", userid)))
         if current > 0:

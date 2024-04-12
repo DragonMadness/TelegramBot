@@ -11,6 +11,7 @@ from src.logging.log_level import *
 
 from src.manager.question_manager import QuestionManager
 from src.model.question import Question
+from src.model.response import Response
 
 RESOURCES_PATH = Path.cwd().absolute() / "resources"
 STORAGE_PATH = RESOURCES_PATH / "storage" / "questions.json"
@@ -42,7 +43,7 @@ paged_message_manager = PagedMessageManager()
 
 @bot.message_handler(commands=["start"])
 def start(message: Message):
-    bot.send_message(message.from_user.id, messages.greeting, parse_mode="Markdown")
+    bot.send_message(message.from_user.id, messages.greeting)
 
 
 @bot.message_handler(commands=["question"])
@@ -52,7 +53,7 @@ def new_question_request(message: Message):
     if userid not in waiting_reply.keys():
         waiting_reply[userid] = create_question
 
-    bot.send_message(message.from_user.id, messages.request_question, parse_mode="Markdown")
+    bot.send_message(message.from_user.id, messages.request_question)
 
 
 @bot.message_handler(commands=["myquestions"])
@@ -61,14 +62,15 @@ def get_user_questions(message: Message):
 
     user_questions = question_manager.get_questions_for_user(userid)
     if len(user_questions) == 0:
-        bot.send_message(userid, messages.no_questions_asked, parse_mode="Markdown")
+        bot.send_message(userid, messages.no_questions_asked)
         return
 
     message_text, markup = paged_message_manager.get_message(userid, user_questions)
     if message_text is None or markup is None:
         return
     markup.row(InlineKeyboardButton("Добавить ответ", callback_data="RA"))
-    bot.send_message(userid, message_text, parse_mode="Markdown", reply_markup=markup)
+    markup.row(InlineKeyboardButton("Просмотреть ответы", callback_data="RV"))
+    bot.send_message(userid, message_text, reply_markup=markup)
 
 
 @bot.message_handler(commands=["allquestions"])
@@ -77,7 +79,7 @@ def get_all_questions(message: Message):
 
     questions = question_manager.get_questions()
     if len(questions) == 0:
-        bot.send_message(userid, messages.no_questions_asked, parse_mode="Markdown")
+        bot.send_message(userid, messages.no_questions_asked)
         return
 
     message_text, markup = paged_message_manager.get_message(userid, questions)
@@ -85,7 +87,8 @@ def get_all_questions(message: Message):
         return
     markup: InlineKeyboardMarkup
     markup.row(InlineKeyboardButton("Добавить ответ", callback_data="RA"))
-    bot.send_message(userid, message_text, parse_mode="Markdown", reply_markup=markup)
+    markup.row(InlineKeyboardButton("Просмотреть ответы", callback_data="RV"))
+    bot.send_message(userid, message_text, reply_markup=markup)
 
 
 @bot.message_handler(commands=["stop"])
@@ -94,13 +97,13 @@ def stop(message: Message):
 
     question_manager.save(STORAGE_PATH)
 
-    bot.send_message(userid, messages.shutdown, parse_mode="Markdown")
+    bot.send_message(userid, messages.shutdown)
     bot.stop_polling()
 
 
 @bot.message_handler(commands=["help"])
 def show_help(message: Message):
-    bot.send_message(message.from_user.id, messages.help_message, parse_mode="Markdown")
+    bot.send_message(message.from_user.id, messages.help_message)
 
 
 @bot.message_handler(content_types=["text"])
@@ -133,11 +136,58 @@ def handle_callback(callback: CallbackQuery):
 
         bot.edit_message_text(chat_id=message.chat.id, message_id=message.id, text=new_message_text,
                               reply_markup=InlineKeyboardMarkup(keyboard=keyboard))
-    elif action == "RA":
-        if userid not in paged_message_manager.object_lists_cache.keys():
-            return
-        waiting_reply[userid] = add_answer
-        bot.send_message(userid, messages.request_reply)
+    elif action[0] == "R":
+        if action == "RA":
+            if userid not in paged_message_manager.object_lists_cache.keys():
+                return
+            waiting_reply[userid] = add_answer
+            bot.send_message(userid, messages.request_reply)
+        elif action == "RV":
+            user_pages_data = paged_message_manager.object_lists_cache[userid]
+            current_question: Question = user_pages_data[0][user_pages_data[1]]
+
+            if len(current_question.get_responses()) == 0:
+                bot.send_message(userid, messages.no_responses)
+                return
+
+            message_text, markup = paged_message_manager.get_message(userid, current_question.get_responses())
+            markup: InlineKeyboardMarkup
+            markup.row(InlineKeyboardButton("⬆", callback_data="RU"),
+                       InlineKeyboardButton("⬇", callback_data="RD"))
+
+            bot.edit_message_text(chat_id=message.chat.id, message_id=message.id, text=message_text, reply_markup=markup)
+        elif action == "RU":
+            user_pages_data = paged_message_manager.object_lists_cache[userid]
+            if not isinstance(user_pages_data[0][0], Response):
+                return
+            current_response: Response = user_pages_data[0][user_pages_data[1]]
+            current_response.add_rating()
+
+            keyboard = message.reply_markup.keyboard.copy()
+            message_text, markup = paged_message_manager.get_message(userid)
+            keyboard[0] = markup.keyboard[0]
+            new_markup = InlineKeyboardMarkup(keyboard=keyboard)
+
+            bot.edit_message_text(chat_id=message.chat.id, message_id=message.id,
+                                  text=message_text, reply_markup=new_markup)
+
+            logger.info("User upvoted a repsonse")
+        elif action == "RD":
+            user_pages_data = paged_message_manager.object_lists_cache[userid]
+            if not isinstance(user_pages_data[0][0], Response):
+                return
+            current_response: Response = user_pages_data[0][user_pages_data[1]]
+            current_response.deduct_rating()
+
+            keyboard = message.reply_markup.keyboard.copy()
+            message_text, markup = paged_message_manager.get_message(userid)
+            keyboard[0] = markup.keyboard[0]
+            new_markup = InlineKeyboardMarkup(keyboard=keyboard)
+
+            bot.edit_message_text(chat_id=message.chat.id, message_id=message.id,
+                                  text=message_text, reply_markup=new_markup)
+
+            logger.info("User downvoted a repsonse")
 
 
 def create_question(message: Message):
@@ -145,7 +195,7 @@ def create_question(message: Message):
     username = message.from_user.username
 
     question_manager.new_question(userid, username, message.text)
-    bot.send_message(userid, messages.question_saved, parse_mode="Markdown")
+    bot.send_message(userid, messages.question_saved)
     logger.log(INFO, f"Successfully registered a question from {username}")
 
 
@@ -157,7 +207,7 @@ def add_answer(message: Message):
     user_pages_data = paged_message_manager.object_lists_cache[userid]
 
     current_question: Question = user_pages_data[0][user_pages_data[1]]
-    current_question.add_response(userid, message.text)
+    current_question.add_response(userid, message.from_user.username, message.text)
 
     bot.send_message(userid, messages.reply_saved)
 

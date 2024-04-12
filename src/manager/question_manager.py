@@ -24,7 +24,7 @@ class QuestionManager:
         return self.__questions
 
     def get_questions_for_user(self, userid: int):
-        return [question for question in self.__questions if question.get_poster_id() == userid]
+        return [question for question in self.__questions if question.get_author_id() == userid]
 
     def new_question(self, userid: int, username: str, text: str):
         self.__questions.append(Question(userid, username, text))

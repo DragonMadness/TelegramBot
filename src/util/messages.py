@@ -23,3 +23,6 @@ help_message = ("Справка по командам чат-бота:\n"
 response_view_format = ("@%response_author%:\n\n"
                         "%rating_sign% %rating% - %response_text%")
 no_responses = "Ответов на этот вопрос пока нет."
+new_response = "На ваш вопрос ответили!"
+settings = "Настройки пользователя"
+new_question = "Пользователь задал новый вопрос!"

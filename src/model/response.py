@@ -29,11 +29,16 @@ class Response(Formattable):
         self.__rating -= 1
 
     def get_string(self):
+        sign = "⛔"
+        if self.__rating > 0:
+            sign = "⬆"
+        elif self.__rating < 0:
+            sign = "⬇"
         return (messages.response_view_format
                 .replace("%response_author%", str(self.__author_name))
-                .replace("%rating_sign%", "⬆" if self.__rating > 0 else "⬇")
+                .replace("%rating_sign%", sign)
                 .replace("%rating%", str(self.__rating))
                 .replace("%response_text%", self.__text))
 
     def serialize(self):
-        return {"author": self.__author, "text": self.__text, "rating": self.__rating}
+        return {"author": self.__author, "author_name": self.__author_name, "text": self.__text, "rating": self.__rating}

@@ -254,7 +254,7 @@ def add_answer(message: Message):
     current_question: Question = user_pages_data[0][user_pages_data[1]]
     current_question.add_response(user, message.text)
 
-    if current_question.get_author().do_notify_new_answers():
+    if current_question.get_author().do_notify_new_answers() and current_question.get_author() != user:
         bot.send_message(current_question.get_author().get_userid(), messages.new_response)
 
     bot.send_message(user.get_userid(), messages.reply_saved)
